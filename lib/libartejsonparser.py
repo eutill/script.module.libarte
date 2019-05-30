@@ -126,6 +126,7 @@ def getSearch(s):
 		d['_type'] = 'date'
 		l.append(d)
 	return l
+#Hallo!
 preferences = {
 				'ignore':0,
 				'FR':1,
