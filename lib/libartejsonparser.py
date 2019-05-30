@@ -22,8 +22,6 @@ def getVideos(url):
 		d['_tvshowtitle'] = video['title']
 		if video['imageUrl'] != None:
 			d['_thumb'] = video['imageUrl']
-		if video['durationSeconds'] != None:
-			d['_duration'] = str(video['durationSeconds'])
 		if video['teaserText'] != None:
 			d['_plotoutline'] = video['teaserText']
 			d['_plot'] = video['teaserText']
@@ -33,8 +31,8 @@ def getVideos(url):
 			d['_plot'] = video['shortDescription']
 		#d['url'] = 'http://www.arte.tv/hbbtvv2/services/web/index.php/OPA/streams/'+video['programId']+'/'+video['kind']+'/'+video['platform']+'/de/DE'
 		d['url'] = 'https://api.arte.tv/api/player/v1/config/de/'+video['programId']+'?autostart=0&lifeCycle=1&lang=de_DE&config=arte_tvguide'
-		d['mode'] = 'libArtePlay'
-		d['_type'] = 'date'
+		d['mode'] = 'libArteSelectLang'
+		d['_type'] = 'dir'
 		l.append(d)
 	if j['meta']['page'] < j['meta']['pages']:
 		d = {}
@@ -97,15 +95,13 @@ def getDate(yyyymmdd):
 			
 			if program['video']['imageUrl'] != None:
 				d['_thumb'] = program['video']['imageUrl']
-			if program['video']['durationSeconds'] != None:
-				d['_duration'] = str(program['video']['durationSeconds'])
 			if program['video']['teaserText'] != None:
 				d['_plotoutline'] = program['video']['teaserText']
 				d['_plot'] = program['video']['teaserText']
 			if program['video']['fullDescription'] != None:
 				d['_plot'] = program['video']['fullDescription']
-			d['mode'] = 'libArtePlay'
-			d['_type'] = 'date'
+			d['mode'] = 'libArteSelectLang'
+			d['_type'] = 'dir'
 			l.append(d)
 	return l
 
@@ -122,131 +118,43 @@ def getSearch(s):
 		if video['imageUrl'] != None:
 			d['_thumb'] = video['imageUrl']
 		d['url'] = 'https://api.arte.tv/api/player/v1/config/de/'+video['programId']+'?autostart=0&lifeCycle=1&lang=de_DE&config=arte_tvguide'
-		d['mode'] = 'libArtePlay'
-		d['_type'] = 'date'
+		d['mode'] = 'libArteSelectLang'
+		d['_type'] = 'dir'
+		if video['shortDescription'] != None:
+			d['_plot'] = video['shortDescription']
 		l.append(d)
 	return l
-#Hallo!
-preferences = {
-				'ignore':0,
-				'FR':1,
-				'OV':2,
-				'OMU':3,
-				'DE':4,}
-	
-languages = {
-				'FR':'FR',
-				'OMU':'DE',
-				'DE':'DE'}
-				
-bitrates = {
-				'EQ':800,
-				'HQ':1500,
-				'SQ':2200,}
-	
-#legend:
-#
-#VO Original Voice	
-#VOA Original Voice	Allemande
-#VOF Original Voice Francaise
-#VA Voice Allemande
-#VF Voice Francaise
-#VAAUD Audio Description Allemande
-#VFAUD Audio Description Francaise
-#VE* Other Voice
-#
-#STA Subtitle Allemande
-#STF Subtitle Francaise
-#STE* Subtitle Other
-#STMA Subtitle Mute Allemande
-#STMF Subtitle Mute Francaise
-#
-#* is always followed by the provided language
-#[ANG] English
-#[ESP] Spanish
-#[POL] Polish
-#
-#examples:
-#VOF-STE[ANG] original audio (french), english subtitles
-#VOA-STMA orignal audio (german), with french mute sutitles
 
-lang = {
-		'VO':'ov',
-		'OmU':'ov',
-		'VA':'de',
-		'VF':'fr',
-		'VA-STA':'de',
-		'VF-STF':'fr',
-		
-		'VOA':'de',
-		'VOF':'fr',
-		'VOA-STA':'omu',
-		'VOA-STE':'omu',
-		'VOF-STA':'omu',
-		'VOF-STE':'omu',
-		#'VAAUD':'de',
-		'VFAUD':'fr',
-		'VE[ANG]':'en',
-		'VE[ESP]':'es',
-		'VE[POL]':'pl',
-		
-		'STA':'de',
-		'STF':'fr',
-		'STMA':'de',
-		'STMF':'fr',
-		'STE[ANG]':'en',
-		'STE[ESP]':'es',
-		'STE[POL]':'pl',
-}
-def getVideoUrl(url):
-	d = {}
-	d['media'] = []
+def selectLang(url):
+	l = []
+
 	response = libMediathek.getUrl(url)
 	j = json.loads(response)
-	storedLang = 0
-	for stream in j['videoStreams']:
-		properties = {}
-		properties['url'] = stream['url']
-		properties['bitrate'] = bitrates[stream['quality']]
-		
-		s = stream['audioCode'].split('-')
-		properties['lang'] = lang[s[0]]
-		if s[0] == 'VAAUD' or s[0] == 'VFAUD':
-			properties['audiodesc'] = True
-		if len(s) > 1:
-			properties['subtitlelang'] = lang[s[1]]
-			if s[1] == 'STMA' or s[1] == 'STMF':
-				properties['sutitlemute'] = True
-		
-		properties['type'] = 'video'
-		properties['stream'] = 'MP4'
-		d['media'].append(properties)
-	return d
-	
-def getVideoUrlWeb(url):
+	for key in j['videoJsonPlayer']['VSR']:
+		if j['videoJsonPlayer']['VSR'][key]['mediaType'] == 'hls':
+			d = {}
+			d['_name'] = j['videoJsonPlayer']['VSR'][key]['versionLibelle']
+			d['title'] = j['videoJsonPlayer']['VTI']
+			d['_tvshowtitle'] = j['videoJsonPlayer']['VSR'][key]['versionLibelle'] + 'Q'
+			d['_thumb'] = j['videoJsonPlayer']['VTU']['IUR']
+			d['thumb'] = j['videoJsonPlayer']['VTU']['IUR']
+			if 'VDE' in j['videoJsonPlayer']:
+				d['_plot'] = j['videoJsonPlayer']['VDE']
+				d['plot'] = j['videoJsonPlayer']['VDE']
+			elif 'V7T' in j['videoJsonPlayer']:
+				d['_plot'] = j['videoJsonPlayer']['V7T']
+				d['plot'] = j['videoJsonPlayer']['V7T']
+			d['_duration'] = str(j['videoJsonPlayer']['videoDurationSeconds'])
+			d['duration'] = str(j['videoJsonPlayer']['videoDurationSeconds'])
+			d['_type'] = 'date'
+			d['mode'] = 'libArtePlay'
+			d['url'] = j['videoJsonPlayer']['VSR'][key]['url']
+			l.append(d)
+	return l
+
+def getVideoUrlWeb(url,title,plot,thumb,duration):
 	d = {}
 	d['media'] = []
-	response = libMediathek.getUrl(url)
-	j = json.loads(response)
-	#for caption in j.get('captions',[]):
-	#	if caption['format'] == 'ebu-tt-d-basic-de':
-	#		d['subtitle'] = [{'url':caption['uri'], 'type':'ttml', 'lang':'de', 'colour':True}]
-	#	#elif caption['format'] == 'webvtt':
-	#	#	d['subtitle'] = [{'url':caption['uri'], 'type':'webvtt', 'lang':'de', 'colour':False}]
-	storedLang = 0
-	for key in j['videoJsonPlayer']['VSR']:#oh, this is such bullshit. there are endless and senseless permutations of language/subtitle permutations. i'll have to rewrite this in the future for french and other languages, subtitles, hearing disabled, ... who the hell uses baked in subtitles in 2017?!?!
-		l = lang.get(j['videoJsonPlayer']['VSR'][key]['versionCode'].split('[')[0],'ignore').upper()
-		if preferences.get(l,0) > storedLang and j['videoJsonPlayer']['VSR'][key]['mediaType'] == 'hls':
-			storedLang = preferences.get(l,0)
-			result = {'url':j['videoJsonPlayer']['VSR'][key]['url'], 'type': 'video', 'stream':'HLS'}
-	d['media'].append(result)
-	
-	d['metadata'] = {}
-	d['metadata']['name'] = j['videoJsonPlayer']['VTI']
-	if 'VDE' in j['videoJsonPlayer']:
-		d['metadata']['plot'] = j['videoJsonPlayer']['VDE']
-	elif 'V7T' in j['videoJsonPlayer']:
-		d['metadata']['plot'] = j['videoJsonPlayer']['V7T']
-	d['metadata']['thumb'] = j['videoJsonPlayer']['VTU']['IUR']
-	d['metadata']['duration'] = str(j['videoJsonPlayer']['videoDurationSeconds'])
+	d['media'].append({'url':url, 'type':'video', 'stream':'HLS'})
+	d['metadata'] = {'name':title, 'plot':plot, 'thumb':thumb, 'duration':duration}
 	return d

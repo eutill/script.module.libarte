@@ -41,8 +41,7 @@ def libArteListSearch(searchString=False):
 	return search(searchString)
 		
 def libArtePlay():
-	#return libArteJsonParser.getVideoUrl(params['url'])
-	return libArteJsonParser.getVideoUrlWeb(params['url'])
+	return libArteJsonParser.getVideoUrlWeb(params['url'],params['title'],params['plot'],params['thumb'],params['duration'])
 	
 def headUrl(url):#TODO: move to libmediathek3
 	libMediathek.log(url)
@@ -55,6 +54,9 @@ def headUrl(url):#TODO: move to libmediathek3
 	info = response.info()
 	response.close()
 	return info
+
+def libArteSelectLang():
+	return libArteJsonParser.selectLang(params['url'])
 	
 def list():	
 	modes = {
@@ -67,6 +69,7 @@ def list():
 	'libArteSearch': libArteSearch,
 	'libArteListSearch': libArteListSearch,
 	'libArtePlay': libArtePlay,
+	'libArteSelectLang': libArteSelectLang
 	}
 	
 	global params
